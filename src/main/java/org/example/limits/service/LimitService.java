@@ -7,6 +7,7 @@ import org.example.limits.entity.Limit;
 import org.example.limits.entity.LimitReservation;
 import org.example.limits.entity.ReservationStatus;
 import org.example.limits.exception.LimitException;
+import org.example.limits.kafka.LimitEvent;
 import org.example.limits.repository.LimitRepository;
 import org.example.limits.repository.LimitReservationRepository;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -27,13 +28,16 @@ public class LimitService {
     private final LimitRepository limitRepository;
     private final LimitReservationRepository reservationRepository;
     private final LimitProperties properties;
+    private final LimitEventProducer eventProducer;
 
     public LimitService(LimitRepository limitRepository,
                         LimitReservationRepository reservationRepository,
-                        LimitProperties properties) {
+                        LimitProperties properties,
+                        LimitEventProducer eventProducer) {
         this.limitRepository = limitRepository;
         this.reservationRepository = reservationRepository;
         this.properties = properties;
+        this.eventProducer = eventProducer;
     }
 
     /**
@@ -68,6 +72,10 @@ public class LimitService {
                 UUID.randomUUID(), userId, amount, ReservationStatus.RESERVED, now, now);
         reservationRepository.save(reservation);
 
+        eventProducer.publish(new LimitEvent(
+                reservation.getId(), userId, amount,
+                ReservationStatus.RESERVED, limit.getLimitValue(), now));
+
         return new ReservationResponse(reservation.getId(), userId, amount,
                 ReservationStatus.RESERVED, limit.getLimitValue());
     }
@@ -89,6 +97,10 @@ public class LimitService {
         BigDecimal current = limitRepository.findById(reservation.getUserId())
                 .map(Limit::getLimitValue)
                 .orElse(null);
+
+        eventProducer.publish(new LimitEvent(
+                reservation.getId(), reservation.getUserId(), reservation.getAmount(),
+                ReservationStatus.CONFIRMED, current, Instant.now()));
 
         return new ReservationResponse(reservation.getId(), reservation.getUserId(),
                 reservation.getAmount(), reservation.getStatus(), current);
@@ -112,6 +124,10 @@ public class LimitService {
 
         reservation.setStatus(ReservationStatus.CANCELLED);
         reservation.setUpdatedAt(Instant.now());
+
+        eventProducer.publish(new LimitEvent(
+                reservation.getId(), reservation.getUserId(), reservation.getAmount(),
+                ReservationStatus.CANCELLED, limit.getLimitValue(), Instant.now()));
 
         return new ReservationResponse(reservation.getId(), reservation.getUserId(),
                 reservation.getAmount(), reservation.getStatus(), limit.getLimitValue());
