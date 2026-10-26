@@ -29,16 +29,15 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
   mail:
-    # Локальный SMTP-сброс (Mailpit из docker-compose). Для реальной почты замените
-    # на свой SMTP-сервер (например, smtp.gmail.com:587), укажите логин и пароль
-    # приложения и включите auth/starttls.
-    host: localhost
-    port: 1025
-    username: ""
-    password: ""
+    # Yandex SMTP. Пароль берётся из переменной окружения MAIL_PASSWORD
+    # (это «пароль приложения» Яндекса — в git его НЕ коммитим).
+    host: smtp.yandex.ru
+    port: 465
+    username: daria-20@yandex.ru
+    password: ${MAIL_PASSWORD:}
     properties:
-      mail.smtp.auth: false
-      mail.smtp.starttls.enable: false
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: true
 
 app:
   limit:
@@ -53,5 +52,5 @@ app:
     topic: limit-events
   notification:
     # Отправитель и получатель уведомлений о смене статуса лимита.
-    from: limits-service@example.com
-    recipient: daria.suroegina@gmail.com
+    from: daria-20@yandex.ru
+    recipient: daria-20@yandex.ru
