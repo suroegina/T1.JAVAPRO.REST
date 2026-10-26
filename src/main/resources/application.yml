@@ -17,6 +17,26 @@ spring:
   liquibase:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yaml
+  kafka:
+    # Адрес Kafka из docker-compose (контейнер слушает на 9092).
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: limits-notification-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+  mail:
+    # Yandex SMTP. Пароль берётся из переменной окружения MAIL_PASSWORD
+    host: smtp.yandex.ru
+    port: 465
+    username: daria-20@yandex.ru
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.ssl.enable: true
 
 app:
   limit:
@@ -26,3 +46,10 @@ app:
     reservation-ttl: 10m
     # Как часто запускается задача восстановления «зависших» резервирований (в миллисекундах).
     recovery-interval: 60000
+  kafka:
+    # Топик, куда продюсер пишет события о резерве/списании лимита.
+    topic: limit-events
+  notification:
+    # Отправитель и получатель уведомлений о смене статуса лимита.
+    from: daria-20@yandex.ru
+    recipient: daria-20@yandex.ru
