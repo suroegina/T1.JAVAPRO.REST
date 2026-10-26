@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: limits-service
+  datasource:
+    url: jdbc:postgresql://localhost:5438/suroegina
+    username: suroegina
+    password: 200588
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      # Схему полностью ведёт Liquibase — Hibernate ничего не создаёт и не проверяет.
+      ddl-auto: none
+    open-in-view: false
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+app:
+  limit:
+    # Дефолтный лимит, общий для всех пользователей.
+    default-value: 100000.00
+    # Сколько времени резервирование может «висеть» до автоотмены (стратегия восстановления).
+    reservation-ttl: 10m
+    # Как часто запускается задача восстановления «зависших» резервирований (в миллисекундах).
+    recovery-interval: 60000
