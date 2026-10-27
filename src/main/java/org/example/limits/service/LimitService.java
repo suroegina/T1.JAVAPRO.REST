@@ -96,7 +96,8 @@ public class LimitService {
 
         BigDecimal current = limitRepository.findById(reservation.getUserId())
                 .map(Limit::getLimitValue)
-                .orElse(null);
+                .orElseThrow(() -> new LimitException(500, "LIMIT_NOT_FOUND",
+                        "Limit for user " + reservation.getUserId() + " not found"));
 
         eventProducer.publish(new LimitEvent(
                 reservation.getId(), reservation.getUserId(), reservation.getAmount(),
